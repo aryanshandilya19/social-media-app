@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../core/auth_storage.dart';
 
 class ApiService {
-  static const String baseUrl = "https://social-backend-zn0w.onrender.com";
+  static const String baseUrl = "http://localhost:5000";
 
   static Future<Map<String, dynamic>> login({
     required String email,
