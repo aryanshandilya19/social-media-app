@@ -6,7 +6,8 @@ import {
   deletePost,
   updatePost,
   getFeed,
-  toggleLike
+  toggleLike,
+  getUserPosts
 } from "../controllers/post.controller.js";
 
 const router = express.Router();
