@@ -15,8 +15,10 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? user;
   List posts = [];
+
   bool isLoading = true;
   String? currentUserId;
+  bool isMyProfile = false;
 
   @override
   void initState() {
@@ -24,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     loadProfile();
   }
 
+  // 🚀 LOAD PROFILE
   Future<void> loadProfile() async {
     try {
       final id = await AuthStorage.getUserId();
@@ -33,16 +36,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() {
         currentUserId = id;
+        isMyProfile = id == widget.userId;
+
         user = profile["data"];
-        posts = userPosts["data"] ?? [];
+
+        // 🔥 SAFE FIX (handles both data/posts)
+        posts = (userPosts["data"] ?? userPosts["posts"] ?? []);
+
+        print("🔥 POSTS: $posts"); // DEBUG
+
         isLoading = false;
       });
     } catch (e) {
-      print(e);
+      print("💥 ERROR: $e");
       setState(() => isLoading = false);
     }
   }
 
+  // 🚀 FOLLOW / UNFOLLOW
   Future<void> toggleFollow() async {
     final isFollowing = user?["isFollowing"] ?? false;
 
@@ -58,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  // 🚀 LOGOUT WITH CONFIRMATION
   Future<void> logout(BuildContext context) async {
     final confirm = await showDialog(
       context: context,
@@ -92,6 +104,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // 🚀 DRAWER (ONLY FOR YOUR PROFILE)
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      backgroundColor: Colors.black,
+      child: Column(
+        children: [
+          UserAccountsDrawerHeader(
+            decoration: const BoxDecoration(color: Colors.black),
+            accountName: Text(user?["name"] ?? ""),
+            accountEmail: Text(user?["email"] ?? ""),
+            currentAccountPicture: const CircleAvatar(
+              child: Icon(Icons.person),
+            ),
+          ),
+          const Spacer(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              "Logout",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+            onTap: () => logout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -99,42 +139,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      drawer: Drawer(
-        child: Column(
+      // ✅ DRAWER ONLY FOR OWN PROFILE
+      drawer: isMyProfile ? _buildDrawer(context) : null,
+
+      appBar: AppBar(title: Text(user?["name"] ?? "Profile")),
+
+      body: RefreshIndicator(
+        onRefresh: loadProfile,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            UserAccountsDrawerHeader(
-              accountName: Text(user?["name"] ?? ""),
-              accountEmail: Text(user?["email"] ?? ""),
+            // 👤 USER INFO
+            Center(
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 40,
+                    child: Icon(Icons.person, size: 40),
+                  ),
+                  const SizedBox(height: 10),
+
+                  Text(
+                    user?["name"] ?? "",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Followers: ${user?["followersCount"] ?? 0}"),
+                      const SizedBox(width: 20),
+                      Text("Following: ${user?["followingCount"] ?? 0}"),
+                    ],
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // 🔥 CONDITIONAL BUTTON
+                  if (isMyProfile)
+                    ElevatedButton(
+                      onPressed: () {},
+                      child: const Text("Edit Profile"),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: toggleFollow,
+                      child: Text(
+                        user?["isFollowing"] == true ? "Unfollow" : "Follow",
+                      ),
+                    ),
+                ],
+              ),
             ),
-            const Spacer(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                "Logout",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
+
+            const SizedBox(height: 20),
+            const Divider(),
+
+            // 📝 POSTS
+            if (posts.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text("No posts yet 🚀"),
                 ),
               ),
-              onTap: () => logout(context),
-            ),
+
+            ...posts.map((post) {
+              return Card(
+                color: Colors.grey[900],
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(post["content"] ?? ""),
+                ),
+              );
+            }).toList(),
           ],
         ),
-      ),
-      appBar: AppBar(title: Text(user?["name"] ?? "Profile")),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text("Followers: ${user?["followersCount"]}"),
-          Text("Following: ${user?["followingCount"]}"),
-          if (currentUserId != widget.userId)
-            ElevatedButton(
-              onPressed: toggleFollow,
-              child: Text(user?["isFollowing"] == true ? "Unfollow" : "Follow"),
-            ),
-          const SizedBox(height: 20),
-          ...posts.map((p) => Text(p["content"] ?? "")).toList(),
-        ],
       ),
     );
   }
