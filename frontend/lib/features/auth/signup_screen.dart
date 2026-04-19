@@ -49,43 +49,56 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Signup")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: "Name"),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.6), blurRadius: 20),
+              ],
             ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Create Account",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
 
-            const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: "Email"),
+                TextField(decoration: const InputDecoration(labelText: "Name")),
+
+                const SizedBox(height: 16),
+
+                TextField(
+                  decoration: const InputDecoration(labelText: "Email"),
+                ),
+
+                const SizedBox(height: 16),
+
+                TextField(
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: "Password"),
+                ),
+
+                const SizedBox(height: 24),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    child: const Text("Sign Up"),
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Password"),
-            ),
-
-            const SizedBox(height: 30),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : signup,
-                child: isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text("Create Account"),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

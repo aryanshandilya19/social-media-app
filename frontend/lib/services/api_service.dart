@@ -3,8 +3,20 @@ import 'package:http/http.dart' as http;
 import '../core/auth_storage.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:5000";
+  // 🔥 IMPORTANT: YOUR LIVE BACKEND
+  static const String baseUrl = "https://social-backend-zn0w.onrender.com";
 
+  // 🔥 COMMON HEADERS
+  static Future<Map<String, String>> _headers() async {
+    final token = await AuthStorage.getToken();
+
+    return {
+      "Content-Type": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    };
+  }
+
+  // 🔐 LOGIN
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -18,42 +30,7 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // ✅ THIS MUST BE INSIDE ApiService CLASS
-  static Future<Map<String, dynamic>> getFeed({String? cursor}) async {
-    final token = await AuthStorage.getToken();
-
-    final uri = cursor == null
-        ? Uri.parse("$baseUrl/api/posts/feed")
-        : Uri.parse("$baseUrl/api/posts/feed?cursor=$cursor");
-
-    final response = await http.get(
-      uri,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-    );
-
-    return jsonDecode(response.body);
-  }
-
-  static Future<Map<String, dynamic>> createPost({
-    required String content,
-  }) async {
-    final token = await AuthStorage.getToken();
-
-    final response = await http.post(
-      Uri.parse("$baseUrl/api/posts"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({"content": content}),
-    );
-
-    return jsonDecode(response.body);
-  }
-
+  // 🔐 REGISTER
   static Future<Map<String, dynamic>> register({
     required String name,
     required String email,
@@ -68,29 +45,45 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> toggleLike(String postId) async {
-    final token = await AuthStorage.getToken();
+  // 📰 FEED
+  static Future<Map<String, dynamic>> getFeed({String? cursor}) async {
+    final uri = cursor == null
+        ? Uri.parse("$baseUrl/api/posts/feed")
+        : Uri.parse("$baseUrl/api/posts/feed?cursor=$cursor");
 
+    final response = await http.get(uri, headers: await _headers());
+
+    return jsonDecode(response.body);
+  }
+
+  // 📝 CREATE POST
+  static Future<Map<String, dynamic>> createPost({
+    required String content,
+  }) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/api/posts/$postId/like"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      Uri.parse("$baseUrl/api/posts"),
+      headers: await _headers(),
+      body: jsonEncode({"content": content}),
     );
 
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> getComments(String postId) async {
-    final token = await AuthStorage.getToken();
+  // ❤️ LIKE
+  static Future<Map<String, dynamic>> toggleLike(String postId) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/api/posts/$postId/like"),
+      headers: await _headers(),
+    );
 
+    return jsonDecode(response.body);
+  }
+
+  // 💬 COMMENTS
+  static Future<Map<String, dynamic>> getComments(String postId) async {
     final response = await http.get(
       Uri.parse("$baseUrl/api/comments/$postId"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: await _headers(),
     );
 
     return jsonDecode(response.body);
@@ -100,102 +93,92 @@ class ApiService {
     required String postId,
     required String content,
   }) async {
-    final token = await AuthStorage.getToken();
-
     final response = await http.post(
       Uri.parse("$baseUrl/api/comments/$postId"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: await _headers(),
       body: jsonEncode({"content": content}),
     );
 
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> deletePost(String postId) async {
-    final token = await AuthStorage.getToken();
-
-    final response = await http.delete(
-      Uri.parse("$baseUrl/api/posts/$postId"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-    );
-
-    return jsonDecode(response.body);
-  }
-
   static Future<Map<String, dynamic>> deleteComment(String commentId) async {
-    final token = await AuthStorage.getToken();
-
     final response = await http.delete(
       Uri.parse("$baseUrl/api/comments/$commentId"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: await _headers(),
     );
 
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> getUserProfile(String userId) async {
-    final token = await AuthStorage.getToken();
+  // 🗑 DELETE POST
+  static Future<Map<String, dynamic>> deletePost(String postId) async {
+    final response = await http.delete(
+      Uri.parse("$baseUrl/api/posts/$postId"),
+      headers: await _headers(),
+    );
 
+    return jsonDecode(response.body);
+  }
+
+  // 👤 PROFILE
+  static Future<Map<String, dynamic>> getUserProfile(String userId) async {
     final response = await http.get(
       Uri.parse("$baseUrl/api/users/$userId"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: await _headers(),
     );
 
     return jsonDecode(response.body);
   }
 
+  // 🔥 FOLLOW USER
   static Future<Map<String, dynamic>> followUser(String userId) async {
-    final token = await AuthStorage.getToken();
-
     final response = await http.post(
       Uri.parse("$baseUrl/api/users/$userId/follow"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: await _headers(),
     );
 
     return jsonDecode(response.body);
   }
 
+  // 🔥 UNFOLLOW USER
   static Future<Map<String, dynamic>> unfollowUser(String userId) async {
-    final token = await AuthStorage.getToken();
-
     final response = await http.post(
       Uri.parse("$baseUrl/api/users/$userId/unfollow"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: await _headers(),
     );
 
     return jsonDecode(response.body);
   }
 
+  // 👥 USERS LIST
   static Future<List> getAllUsers() async {
-    final token = await AuthStorage.getToken();
-
     final response = await http.get(
       Uri.parse("$baseUrl/api/users"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: await _headers(),
     );
 
     final data = jsonDecode(response.body);
     return data["data"] ?? [];
+  }
+
+  // 📝 ALL POSTS (for profile filtering)
+  static Future<Map<String, dynamic>> getPosts() async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/posts"),
+      headers: await _headers(),
+    );
+
+    return jsonDecode(response.body);
+  }
+
+  // 🔥 USER POSTS
+  static Future<Map<String, dynamic>> getUserPosts(String userId) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/api/posts/user/$userId"),
+      headers: await _headers(),
+    );
+
+    return jsonDecode(response.body);
   }
 }

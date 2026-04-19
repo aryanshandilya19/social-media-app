@@ -14,31 +14,36 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
 
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
+          backgroundColor: Color(0xFF020617),
           foregroundColor: Colors.white,
           elevation: 0,
         ),
 
-        colorScheme: const ColorScheme.dark(
-          primary: Colors.white,
-          secondary: Colors.white,
-        ),
+        colorScheme: const ColorScheme.dark(primary: Color(0xFF6366F1)),
 
+        cardColor: const Color(0xFF1E293B),
+
+        // ✅ FIXED BUTTON STYLE (COMPATIBLE)
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
+            backgroundColor: const Color(0xFF6366F1),
+            foregroundColor: Colors.white,
           ),
         ),
 
         inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFF1E293B),
+
           labelStyle: TextStyle(color: Colors.white70),
+
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.white24),
           ),
+
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.white),
           ),

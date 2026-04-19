@@ -220,6 +220,7 @@ export const getUserPosts = async (req, res, next) => {
     const { userId } = req.params;
 
     const posts = await Post.find({ author: userId })
+      .populate("author", "name email avatar")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -227,6 +228,7 @@ export const getUserPosts = async (req, res, next) => {
       data: posts,
     });
   } catch (error) {
+    error.statusCode = 500;
     next(error);
   }
 };

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:social_app_flutter/features/navigation/main_nav_screen.dart';
 import '../../services/api_service.dart';
 import '../../core/auth_storage.dart';
-import '../home/home_screen.dart';
+//import '../home/home_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,8 +34,6 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final result = await ApiService.login(email: email, password: password);
 
-      print("LOGIN RESPONSE: $result");
-
       // ✅ FIXED LOGIC (based on your backend response)
       if (result["token"] != null) {
         await AuthStorage.saveTokens(
@@ -42,10 +41,12 @@ class _LoginScreenState extends State<LoginScreen> {
           refreshToken: result["refreshToken"],
         );
 
-        // ✅ Navigate to Home
+        // 🔥 CRITICAL FIX
+        await AuthStorage.saveUserId(result["user"]["id"]);
+
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const MainNavScreen()),
           (route) => false,
         );
       } else {
@@ -54,8 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      print("LOGIN ERROR: $e");
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
@@ -74,50 +73,80 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: "Email"),
+      backgroundColor: Colors.black,
+
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.6),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
 
-            const SizedBox(height: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 🔥 TITLE
+                const Text(
+                  "Welcome Back",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
 
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Password"),
+                const SizedBox(height: 20),
+
+                // 📧 EMAIL
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: "Email"),
+                ),
+
+                const SizedBox(height: 16),
+
+                // 🔒 PASSWORD
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: "Password"),
+                ),
+
+                const SizedBox(height: 24),
+
+                // 🔥 LOGIN BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : login,
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.black)
+                        : const Text("Login"),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // 🔁 SWITCH TO SIGNUP
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SignupScreen()),
+                    );
+                  },
+                  child: const Text("Create new account"),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 30),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : login,
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.black)
-                    : const Text("Login"),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SignupScreen()),
-                );
-              },
-              child: const Text("Create new account"),
-            ),
-          ],
+          ),
         ),
       ),
     );

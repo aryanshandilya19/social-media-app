@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../features/navigation/main_nav_screen.dart';
 import '../features/auth/login_screen.dart';
-import '../features/home/home_screen.dart';
-import 'auth_storage.dart';
+import '../core/auth_storage.dart';
 
 class AppLauncher extends StatefulWidget {
   const AppLauncher({super.key});
@@ -11,37 +11,34 @@ class AppLauncher extends StatefulWidget {
 }
 
 class _AppLauncherState extends State<AppLauncher> {
-  bool isLoading = true;
-  bool isLoggedIn = false;
+  bool? isLoggedIn;
 
   @override
   void initState() {
     super.initState();
-    checkLoginState();
+    checkAuth();
   }
 
-  Future<void> checkLoginState() async {
+  void checkAuth() async {
     final token = await AuthStorage.getToken();
 
-    if (token != null) {
-      isLoggedIn = true;
-    }
-
     setState(() {
-      isLoading = false;
+      isLoggedIn = token != null && token.isNotEmpty;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    // ⏳ LOADING STATE
+    if (isLoggedIn == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (isLoggedIn) {
-      return const HomeScreen();
+    // 🔥 FINAL ROUTING
+    if (isLoggedIn == true) {
+      return const MainNavScreen(); // ✅ FIXED
+    } else {
+      return const LoginScreen();
     }
-
-    return const LoginScreen();
   }
 }

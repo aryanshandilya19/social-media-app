@@ -13,11 +13,29 @@ class AuthStorage {
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("token");
+
+    final token = prefs.getString("token");
+
+    // 🔥 FIX: handle empty string
+    if (token == null || token.isEmpty) {
+      return null;
+    }
+
+    return token;
   }
 
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await prefs.remove("token");
+    await prefs.remove("refreshToken");
   }
+  static Future<void> saveUserId(String id) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString("userId", id);
+}
+
+static Future<String?> getUserId() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString("userId");
+}
 }
