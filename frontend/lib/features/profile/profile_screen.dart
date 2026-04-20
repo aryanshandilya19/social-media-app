@@ -32,16 +32,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final id = await AuthStorage.getUserId();
 
       final profile = await ApiService.getUserProfile(widget.userId);
-      final userPosts = await ApiService.getUserPosts(widget.userId);
+      final profileData = profile["data"] ?? {};
+      final resolvedUserId = (profileData["_id"] ?? widget.userId).toString();
+
+      final userPosts = await ApiService.getUserPosts(resolvedUserId);
+
+      List resolvedPosts = (userPosts["data"] ?? userPosts["posts"] ?? []);
+
+      // Fallback for backend shape mismatches: derive profile posts from all posts.
+      if (resolvedPosts.isEmpty) {
+        final allPostsResponse = await ApiService.getPosts();
+        final allPosts = (allPostsResponse["data"] ?? []) as List;
+
+        resolvedPosts = allPosts.where((post) {
+          final author = post["author"];
+
+          if (author is Map<String, dynamic>) {
+            return author["_id"]?.toString() == resolvedUserId;
+          }
+
+          return author?.toString() == resolvedUserId;
+        }).toList();
+      }
 
       setState(() {
         currentUserId = id;
-        isMyProfile = id == widget.userId;
+        isMyProfile = id == resolvedUserId;
 
-        user = profile["data"];
+        user = profileData;
 
-        // 🔥 SAFE FIX (handles both data/posts)
-        posts = (userPosts["data"] ?? userPosts["posts"] ?? []);
+        posts = resolvedPosts;
 
         print("🔥 POSTS: $posts"); // DEBUG
 

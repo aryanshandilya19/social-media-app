@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../core/auth_storage.dart';
 
 class CommentScreen extends StatefulWidget {
   final String postId;
@@ -13,6 +14,7 @@ class CommentScreen extends StatefulWidget {
 class _CommentScreenState extends State<CommentScreen> {
   List comments = [];
   bool isLoading = true;
+  String? currentUserId;
 
   final TextEditingController commentController = TextEditingController();
 
@@ -24,7 +26,7 @@ class _CommentScreenState extends State<CommentScreen> {
 
   Future<void> loadComments() async {
     final result = await ApiService.getComments(widget.postId);
-
+    currentUserId = await AuthStorage.getUserId();
     setState(() {
       comments = result["data"] ?? [];
       isLoading = false;
@@ -75,30 +77,77 @@ class _CommentScreenState extends State<CommentScreen> {
 
                       return ListTile(
                         leading: const CircleAvatar(child: Icon(Icons.person)),
+
                         title: Text(
                           comment["author"] != null &&
                                   comment["author"]["name"] != null
                               ? comment["author"]["name"]
                               : "User",
                         ),
+
                         subtitle: Text(comment["content"] ?? ""),
 
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () async {
-                            final commentId = comment["_id"];
+                        // ✅ ONLY SHOW DELETE IF OWNER
+                        trailing: comment["author"]?["_id"] == currentUserId
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () async {
+                                  final confirm = await showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Delete Comment"),
+                                      content: const Text(
+                                        "Are you sure you want to delete this comment?",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
 
-                            final result = await ApiService.deleteComment(
-                              commentId,
-                            );
+                                  if (confirm != true) return;
 
-                            if (result["success"] == true) {
-                              setState(() {
-                                comments.removeAt(index);
-                              });
-                            }
-                          },
-                        ),
+                                  final commentId = comment["_id"];
+
+                                  try {
+                                    await ApiService.deleteComment(commentId);
+
+                                    setState(() {
+                                      comments.removeAt(index);
+                                    });
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Comment deleted"),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Failed to delete comment",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              )
+                            : null, // 👈 IMPORTANT (hides button)
                       );
                     },
                   ),

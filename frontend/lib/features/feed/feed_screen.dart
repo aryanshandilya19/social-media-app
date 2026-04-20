@@ -4,6 +4,7 @@ import '../post/create_post_screen.dart';
 import '../comment/comment_screen.dart';
 import '../profile/profile_screen.dart';
 import '../user/discover_screen.dart';
+import '../../core/auth_storage.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -17,6 +18,7 @@ class _FeedScreenState extends State<FeedScreen> {
   bool isLoading = false;
   bool hasMore = true;
   String? nextCursor;
+  String? currentUserId;
 
   final ScrollController scrollController = ScrollController();
 
@@ -43,6 +45,7 @@ class _FeedScreenState extends State<FeedScreen> {
     final result = await ApiService.getFeed(cursor: nextCursor);
 
     final newPosts = result["data"] ?? [];
+    currentUserId = await AuthStorage.getUserId();
 
     setState(() {
       posts.addAll(newPosts);
@@ -150,22 +153,63 @@ class _FeedScreenState extends State<FeedScreen> {
                                 ),
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () async {
-                                final postId = post["_id"];
+                            if (post["author"]?["_id"] == currentUserId)
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () async {
+                                  final confirm = await showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Delete Post"),
+                                      content: const Text(
+                                        "Are you sure you want to delete this post?",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
 
-                                final result = await ApiService.deletePost(
-                                  postId,
-                                );
+                                  if (confirm != true) return;
 
-                                if (result["success"] == true) {
-                                  setState(() {
-                                    posts.removeAt(index);
-                                  });
-                                }
-                              },
-                            ),
+                                  final postId = post["_id"];
+
+                                  try {
+                                    await ApiService.deletePost(postId);
+
+                                    setState(() {
+                                      posts.removeAt(index);
+                                    });
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Post deleted"),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Failed to delete post"),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
                           ],
                         ),
 

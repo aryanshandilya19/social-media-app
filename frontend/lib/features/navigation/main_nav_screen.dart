@@ -13,6 +13,7 @@ class MainNavScreen extends StatefulWidget {
 
 class _MainNavScreenState extends State<MainNavScreen> {
   int index = 0;
+  int profileRefreshNonce = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -28,21 +29,29 @@ class _MainNavScreenState extends State<MainNavScreen> {
         final userId = snapshot.data!;
 
         final screens = [
-          const FeedScreen(), // 🏠 HOME
-          const SizedBox(), // ➕ (handled separately)
-          ProfileScreen(userId: userId), // 👤 PROFILE
+          const FeedScreen(),
+          const SizedBox(),
+          ProfileScreen(
+            key: ValueKey('profile_$profileRefreshNonce'),
+            userId: userId,
+          ),
         ];
 
         return Scaffold(
           body: screens[index],
 
-          // 🔥 FLOATING CREATE BUTTON (BEST UX)
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final created = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const CreatePostScreen()),
               );
+
+              if (created == true && index == 2) {
+                setState(() {
+                  profileRefreshNonce++;
+                });
+              }
             },
             child: const Icon(Icons.add),
           ),
@@ -55,7 +64,6 @@ class _MainNavScreenState extends State<MainNavScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // 🏠 HOME
                 IconButton(
                   icon: Icon(
                     Icons.home,
@@ -63,9 +71,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
                   ),
                   onPressed: () => setState(() => index = 0),
                 ),
-
-                const SizedBox(width: 40), // space for FAB
-                // 👤 PROFILE
+                const SizedBox(width: 40),
                 IconButton(
                   icon: Icon(
                     Icons.person,
